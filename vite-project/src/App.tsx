@@ -165,8 +165,8 @@ export default function App() {
   const filtered = useMemo(() => {
     return [...data]
       .filter((item) =>
-        (item.pi || "").toLowerCase().includes(searchPI.trim().toLowerCase())
-      )
+  normalize(item.pi).includes(normalize(searchPI))
+)
       .filter((item) =>
         normalize(item.cnpjAnunciante).includes(normalize(searchCNPJ))
       )
