@@ -203,7 +203,7 @@ export default function App() {
       { header: "Anunciante", key: "anunciante", width: 28 },
       { header: "CNPJ Anunciante", key: "cnpjAnunciante", width: 22 },
       { header: "Tipo do PI", key: "tipoPi", width: 18 },
-      { header: "PI Matriz", key: "piMatriz", width: 14 },
+      { header: "PI Matriz", key: "piMatriz", width: 15 },
       { header: "Campanha", key: "campanha", width: 20 },
       { header: "Executivo", key: "executivo", width: 20 },
       { header: "Diretoria", key: "diretoria", width: 20 },
