@@ -163,10 +163,13 @@ export default function App() {
   }, [searchPI, searchCNPJ, searchDate]);
 
   const filtered = useMemo(() => {
+    const normalizedSearchPI = normalize(searchPI);
+
     return [...data]
-      .filter((item) =>
-  normalize(item.pi).includes(normalize(searchPI))
-)
+      .filter((item) => {
+        if (!normalizedSearchPI) return true;
+        return normalize(item.pi) === normalizedSearchPI;
+      })
       .filter((item) =>
         normalize(item.cnpjAnunciante).includes(normalize(searchCNPJ))
       )
