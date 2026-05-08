@@ -3,6 +3,9 @@ import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
+import { RequestAccess } from "./pages/RequestAccess";
+import { LoginToken } from "./pages/LoginToken";
+import { apiGet, clearToken, getToken } from "./services/api";
 
 type PI = {
   pi: string;
@@ -31,6 +34,11 @@ type PI = {
   observacoes: string;
 };
 
+type BuscaPiResponse = {
+  total: number;
+  items: PI[];
+};
+
 const ITEMS_PER_PAGE = 50;
 
 function formatDate(value: string) {
@@ -51,6 +59,7 @@ function formatMoney(value: number) {
 function formatCNPJ(value: string) {
   const digits = (value || "").replace(/\D/g, "");
   if (digits.length !== 14) return value || "-";
+
   return digits.replace(
     /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
     "$1.$2.$3/$4-$5"
@@ -141,6 +150,16 @@ function StatPill({ label, value }: StatPillProps) {
 }
 
 export default function App() {
+  const path = window.location.pathname;
+
+  if (path === "/solicitar-acesso") {
+    return <RequestAccess />;
+  }
+
+  if (path === "/login-token") {
+    return <LoginToken />;
+  }
+
   const [data, setData] = useState<PI[]>([]);
   const [searchPI, setSearchPI] = useState("");
   const [searchCNPJ, setSearchCNPJ] = useState("");
@@ -152,10 +171,25 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    fetch("/data/dados.json")
-      .then((res) => res.json())
-      .then((json) => setData(json))
-      .finally(() => setIsLoading(false));
+    async function loadInitialData() {
+      const token = getToken();
+
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await apiGet<BuscaPiResponse>("/api/busca-pi");
+        setData(response.items);
+      } catch {
+        clearToken();
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadInitialData();
   }, []);
 
   useEffect(() => {
@@ -195,6 +229,11 @@ export default function App() {
     setSearchCNPJ("");
     setSearchDate("");
     setCurrentPage(1);
+  };
+
+  const handleLogout = () => {
+    clearToken();
+    window.location.href = "/solicitar-acesso";
   };
 
   const exportToExcel = async () => {
@@ -258,8 +297,12 @@ export default function App() {
     saveAs(blob, "resultado_filtrado.xlsx");
   };
 
+  if (!isLoading && !getToken()) {
+    return <RequestAccess />;
+  }
+
   return (
-    <div className="min-h-screen flex flex-col bg-[linear-gradient(180deg,#fff5f5_0%,#ffffff_18%,#f5f5f5_100%)]">
+    <div className="flex min-h-screen flex-col bg-[linear-gradient(180deg,#fff5f5_0%,#ffffff_18%,#f5f5f5_100%)]">
       <Header />
 
       <main className="flex-1">
@@ -275,8 +318,17 @@ export default function App() {
               </p>
             </div>
 
-            <div className="inline-flex rounded-full bg-red-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-red-700">
-              Consulta rápida
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex rounded-full bg-red-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-red-700">
+                Consulta protegida
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-600 transition hover:border-red-300 hover:text-red-700"
+              >
+                Sair
+              </button>
             </div>
           </div>
 
@@ -321,7 +373,7 @@ export default function App() {
                   placeholder="Ex.: 3591-1"
                   className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
                   value={searchPI}
-                  onChange={(e) => setSearchPI(e.target.value)}
+                  onChange={(event) => setSearchPI(event.target.value)}
                 />
               </div>
 
@@ -333,7 +385,7 @@ export default function App() {
                   placeholder="Ex.: 24.091.590/0001-73"
                   className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
                   value={searchCNPJ}
-                  onChange={(e) => setSearchCNPJ(e.target.value)}
+                  onChange={(event) => setSearchCNPJ(event.target.value)}
                 />
               </div>
 
@@ -345,7 +397,7 @@ export default function App() {
                   type="date"
                   className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
                   value={searchDate}
-                  onChange={(e) => setSearchDate(e.target.value)}
+                  onChange={(event) => setSearchDate(event.target.value)}
                 />
               </div>
             </div>
@@ -435,7 +487,10 @@ export default function App() {
                         <div className="grid gap-2.5 lg:grid-cols-3">
                           <Section title="Identificação do PI">
                             <div className="grid gap-2 sm:grid-cols-2">
-                              <InfoItem label="Tipo do PI" value={item.tipoPi || "-"} />
+                              <InfoItem
+                                label="Tipo do PI"
+                                value={item.tipoPi || "-"}
+                              />
 
                               <div className="min-w-0">
                                 <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
@@ -445,73 +500,124 @@ export default function App() {
                                   className={[
                                     "inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold",
                                     isMatrix
-                                      ? "border border-yellow-300 bg-yellow-100 text-yellow-800"
-                                      : "border border-neutral-200 bg-neutral-100 text-neutral-600",
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : "bg-neutral-200 text-neutral-700",
                                   ].join(" ")}
                                 >
-                                  {item.piMatriz || "-"}
+                                  {isMatrix ? "Sim" : item.piMatriz || "Não"}
                                 </span>
                               </div>
 
-                              <InfoItem label="Campanha" value={item.campanha || "-"} />
-                              <InfoItem label="Executivo" value={item.executivo || "-"} />
-                              <InfoItem label="Diretoria" value={item.diretoria || "-"} />
-                              <InfoItem label="Canal" value={item.canal || "-"} />
-                              <div className="sm:col-span-2">
-                                <InfoItem label="Produto" value={item.produto || "-"} />
-                              </div>
+                              <InfoItem
+                                label="Mês da venda"
+                                value={item.mesVenda || "-"}
+                              />
+                              <InfoItem
+                                label="Data da venda"
+                                value={formatDate(item.dataVenda)}
+                              />
                             </div>
                           </Section>
 
-                          <Section title="Agência e Cliente">
-                            <div className="grid gap-2 sm:grid-cols-2">
-                              <InfoItem label="Agência" value={item.agencia || "-"} />
+                          <Section title="Cliente">
+                            <div className="grid gap-2">
                               <InfoItem
-                                label="Razão Social Agência"
+                                label="Anunciante"
+                                value={item.anunciante || "-"}
+                                strong
+                              />
+                              <InfoItem
+                                label="CNPJ"
+                                value={formatCNPJ(item.cnpjAnunciante)}
+                              />
+                              <InfoItem
+                                label="UF Cliente"
+                                value={item.ufCliente || "-"}
+                              />
+                              <InfoItem
+                                label="Perfil"
+                                value={item.perfil || "-"}
+                              />
+                            </div>
+                          </Section>
+
+                          <Section title="Agência">
+                            <div className="grid gap-2">
+                              <InfoItem
+                                label="Nome da agência"
+                                value={item.agencia || "-"}
+                                strong
+                              />
+                              <InfoItem
+                                label="Razão social"
                                 value={item.razaoSocialAgencia || "-"}
                               />
                               <InfoItem
-                                label="CNPJ Agência"
+                                label="CNPJ"
                                 value={formatCNPJ(item.cnpjAgencia)}
                               />
-                              <InfoItem label="Perfil" value={item.perfil || "-"} />
-                              <InfoItem label="UF Cliente" value={item.ufCliente || "-"} />
-                              <InfoItem label="UF Agência" value={item.ufAgencia || "-"} />
-                              <InfoItem label="Anunciante" value={item.anunciante || "-"} />
                               <InfoItem
-                                label="CNPJ Anunciante"
-                                value={formatCNPJ(item.cnpjAnunciante)}
+                                label="UF Agência"
+                                value={item.ufAgencia || "-"}
+                              />
+                            </div>
+                          </Section>
+                        </div>
+
+                        <div className="grid gap-2.5 lg:grid-cols-3">
+                          <Section title="Campanha e produto">
+                            <div className="grid gap-2">
+                              <InfoItem
+                                label="Campanha"
+                                value={item.campanha || "-"}
+                                strong
+                              />
+                              <InfoItem
+                                label="Canal"
+                                value={item.canal || "-"}
+                              />
+                              <InfoItem
+                                label="Produto"
+                                value={item.produto || "-"}
                               />
                             </div>
                           </Section>
 
-                          <Section title="Datas e Valores">
-                            <div className="grid gap-2 sm:grid-cols-2">
-                              <InfoItem label="Mês da Venda" value={item.mesVenda || "-"} />
+                          <Section title="Equipe e classificação">
+                            <div className="grid gap-2">
                               <InfoItem
-                                label="Venda"
-                                value={formatDate(item.dataVenda)}
+                                label="Executivo"
+                                value={item.executivo || "-"}
+                                strong
                               />
                               <InfoItem
-                                label="Início Veiculação"
+                                label="Diretoria"
+                                value={item.diretoria || "-"}
+                              />
+                            </div>
+                          </Section>
+
+                          <Section title="Veiculação e valores">
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              <InfoItem
+                                label="Início"
                                 value={formatDate(item.inicioVeiculacao)}
                               />
                               <InfoItem
-                                label="Fim Veiculação"
+                                label="Fim"
                                 value={formatDate(item.fimVeiculacao)}
                               />
                               <InfoItem
                                 label="Vencimento"
                                 value={formatDate(item.vencimento)}
-                                strong
                               />
                               <InfoItem
-                                label="Valor Bruto"
+                                label="Valor bruto"
                                 value={formatMoney(item.valorBruto)}
                                 strong
                               />
                               <InfoItem
-                                label="Valor Líquido"
+                                label="Valor líquido"
                                 value={formatMoney(item.valorLiquido)}
                                 strong
                               />
@@ -519,83 +625,61 @@ export default function App() {
                           </Section>
                         </div>
 
-                        <Section title="Observações">
-                          <div className="rounded-xl bg-white px-0 py-0">
+                        {item.observacoes ? (
+                          <Section title="Observações">
                             <p
                               className={[
-                                "text-xs leading-5 text-neutral-700",
-                                !expanded && longText ? "line-clamp-2" : "",
+                                "text-sm leading-6 text-neutral-700",
+                                longText && !expanded ? "line-clamp-3" : "",
                               ].join(" ")}
                             >
-                              {item.observacoes || "-"}
+                              {item.observacoes}
                             </p>
 
                             {longText && (
                               <button
-                                type="button"
                                 onClick={() =>
                                   setExpandedNotes((prev) => ({
                                     ...prev,
-                                    [itemKey]: !prev[itemKey],
+                                    [itemKey]: !expanded,
                                   }))
                                 }
-                                className="mt-2 text-xs font-semibold text-red-700 hover:text-red-800"
+                                className="mt-2 text-xs font-bold text-red-700 hover:text-red-800"
                               >
                                 {expanded ? "Ver menos" : "Ver mais"}
                               </button>
                             )}
-                          </div>
-                        </Section>
+                          </Section>
+                        ) : null}
                       </div>
                     </article>
                   );
                 })}
               </div>
 
-              {totalPages > 1 && (
-                <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm text-neutral-600">
-                    Página <span className="font-semibold">{currentPage}</span> de{" "}
-                    <span className="font-semibold">{totalPages}</span>
-                  </p>
+              <div className="mt-4 flex flex-col gap-2 rounded-2xl border border-neutral-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-semibold text-neutral-700">
+                  Página {currentPage} de {totalPages}
+                </p>
 
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => setCurrentPage(1)}
-                      disabled={currentPage === 1}
-                      className="rounded-lg border border-neutral-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Primeira
-                    </button>
+                <div className="flex gap-2">
+                  <button
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage((page) => page - 1)}
+                    className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-bold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Anterior
+                  </button>
 
-                    <button
-                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                      className="rounded-lg border border-neutral-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Anterior
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                      }
-                      disabled={currentPage === totalPages}
-                      className="rounded-lg border border-neutral-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Próxima
-                    </button>
-
-                    <button
-                      onClick={() => setCurrentPage(totalPages)}
-                      disabled={currentPage === totalPages}
-                      className="rounded-lg border border-neutral-300 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Última
-                    </button>
-                  </div>
+                  <button
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage((page) => page + 1)}
+                    className="rounded-xl bg-red-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Próxima
+                  </button>
                 </div>
-              )}
+              </div>
             </>
           )}
         </div>
