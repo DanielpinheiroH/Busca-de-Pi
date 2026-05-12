@@ -1,0 +1,22 @@
+"filename", "language", "JSON with Comments", "JSON", "TypeScript", "PostCSS", "TypeScript JSX", "XML", "Python", "Markdown", "JavaScript", "HTML", "comment", "blank", "total"
+"c:\Users\danie\Busca_de_PI\vite-project\README.md", "Markdown", 0, 0, 0, 0, 0, 0, 0, 60, 0, 0, 0, 14, 74
+"c:\Users\danie\Busca_de_PI\vite-project\eslint.config.js", "JavaScript", 0, 0, 0, 0, 0, 0, 0, 0, 22, 0, 0, 2, 24
+"c:\Users\danie\Busca_de_PI\vite-project\index.html", "HTML", 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 0, 1, 14
+"c:\Users\danie\Busca_de_PI\vite-project\package-lock.json", "JSON", 0, 4195, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 4196
+"c:\Users\danie\Busca_de_PI\vite-project\package.json", "JSON", 0, 35, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 36
+"c:\Users\danie\Busca_de_PI\vite-project\public\data\dados.json", "JSON", 0, 223732, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 223732
+"c:\Users\danie\Busca_de_PI\vite-project\public\logo-metropoles-large (1).svg", "XML", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1
+"c:\Users\danie\Busca_de_PI\vite-project\scripts\gerar_json.py", "Python", 0, 0, 0, 0, 0, 0, 152, 0, 0, 0, 0, 51, 203
+"c:\Users\danie\Busca_de_PI\vite-project\src\App.css", "PostCSS", 0, 0, 0, 158, 0, 0, 0, 0, 0, 0, 0, 27, 185
+"c:\Users\danie\Busca_de_PI\vite-project\src\App.tsx", "TypeScript JSX", 0, 0, 0, 0, 548, 0, 0, 0, 0, 0, 0, 59, 607
+"c:\Users\danie\Busca_de_PI\vite-project\src\assets\react.svg", "XML", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1
+"c:\Users\danie\Busca_de_PI\vite-project\src\assets\vite.svg", "XML", 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 2
+"c:\Users\danie\Busca_de_PI\vite-project\src\components\Footer.tsx", "TypeScript JSX", 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 0, 2, 17
+"c:\Users\danie\Busca_de_PI\vite-project\src\components\Header.tsx", "TypeScript JSX", 0, 0, 0, 0, 28, 0, 0, 0, 0, 0, 2, 3, 33
+"c:\Users\danie\Busca_de_PI\vite-project\src\index.css", "PostCSS", 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1
+"c:\Users\danie\Busca_de_PI\vite-project\src\main.tsx", "TypeScript JSX", 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 2, 11
+"c:\Users\danie\Busca_de_PI\vite-project\tsconfig.app.json", "JSON", 0, 24, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 29
+"c:\Users\danie\Busca_de_PI\vite-project\tsconfig.json", "JSON with Comments", 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 8
+"c:\Users\danie\Busca_de_PI\vite-project\tsconfig.node.json", "JSON", 0, 22, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 27
+"c:\Users\danie\Busca_de_PI\vite-project\vite.config.ts", "TypeScript", 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 1, 7
+"Total", "-", 7, 228008, 6, 159, 600, 3, 152, 60, 22, 13, 6, 172, 229208

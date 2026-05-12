@@ -1,0 +1,43 @@
+# Ambiente virtual
+venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Banco local
+*.db
+*.sqlite3
+
+# Env
+.env
+
+# Logs
+*.log
+
+# VSCode
+.vscode/
+
+# Dados sensíveis
+data/
+dados.json
+*.xlsb
+*.xlsx
+*.csv
+
+# Cache
+.pytest_cache/
+# Dados sensíveis
+*.xlsb
+*.xlsx
+*.csv
+base.xlsb
+
+# Python
+backend/venv/
+backend/__pycache__/
+backend/*.db
+backend/.env
+
+# VSCode Counter
+.VSCodeCounter/
