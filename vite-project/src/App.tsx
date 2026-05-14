@@ -48,6 +48,13 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("pt-BR").format(date);
 }
 
+function formatDateTime(value: Date) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "medium",
+  }).format(value);
+}
+
 function formatMoney(value: number) {
   if (typeof value !== "number") return "-";
   return new Intl.NumberFormat("pt-BR", {
@@ -72,6 +79,39 @@ function normalize(value: string) {
 
 function isLongText(text: string) {
   return (text || "").trim().length > 140;
+}
+
+function TrackedWatermark() {
+  const [now, setNow] = useState(new Date());
+  const token = getToken() || "sem-token";
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setNow(new Date());
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const watermarkText = `ACESSO RASTREADO • ${formatDateTime(now)} • ${token}`;
+
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden opacity-[0.075]"
+    >
+      <div className="absolute -left-24 -top-24 flex h-[140vh] w-[140vw] -rotate-12 flex-wrap content-start gap-x-16 gap-y-14">
+        {Array.from({ length: 90 }).map((_, index) => (
+          <span
+            key={index}
+            className="select-none whitespace-nowrap text-[11px] font-black uppercase tracking-[0.28em] text-neutral-900 sm:text-xs"
+          >
+            {watermarkText}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function MatrixBadge({ value }: { value: string }) {
@@ -303,6 +343,8 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[linear-gradient(180deg,#fff5f5_0%,#ffffff_18%,#f5f5f5_100%)]">
+      <TrackedWatermark />
+
       <Header />
 
       <main className="flex-1">
