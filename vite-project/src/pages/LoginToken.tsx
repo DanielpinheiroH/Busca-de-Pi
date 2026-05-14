@@ -61,67 +61,112 @@ export function LoginToken() {
   const canContinue = !!accessToken && !!user;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#fff5f5_0%,#ffffff_30%,#f5f5f5_100%)] px-4 py-10">
-      <div className="w-full max-w-xl rounded-3xl border border-red-100 bg-white p-6 shadow-sm">
-        <div className="text-center">
-          <p className="mb-3 inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-red-700">
-            Busca de PI
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#120406] px-4 py-10">
+      <div className="absolute -left-24 top-10 h-72 w-72 rounded-full bg-red-700/30 blur-3xl" />
+      <div className="absolute -right-24 bottom-10 h-80 w-80 rounded-full bg-red-900/30 blur-3xl" />
+
+      <div className="relative w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl">
+        <div className="bg-[linear-gradient(135deg,#7f1d1d_0%,#b91c1c_45%,#ef4444_100%)] px-6 py-7 text-white">
+          <p className="mb-3 inline-flex rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em]">
+            Acesso restrito
           </p>
 
-          <h1 className="text-2xl font-black text-neutral-950">
-            Acesso temporário
+          <h1 className="text-3xl font-black tracking-tight">
+            Busca de PI
           </h1>
 
-          <p className="mt-3 text-sm font-medium text-neutral-600">{message}</p>
+          <p className="mt-2 text-sm font-medium text-red-50">
+            Validação de acesso temporário para consulta de informações internas.
+          </p>
         </div>
 
-        {canContinue && (
-          <>
-            <div className="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-              <p className="text-sm font-bold text-neutral-900">
-                Antes de continuar, leia os avisos:
-              </p>
-
-              <ul className="mt-3 space-y-2 text-sm text-neutral-700">
-                <li>• Este acesso é pessoal e temporário.</li>
-                <li>• O link é válido por até 72 horas.</li>
-                <li>• Não compartilhe este acesso com terceiros.</li>
-                <li>• As informações consultadas são internas e sensíveis.</li>
-                <li>• Use a ferramenta apenas para fins autorizados.</li>
-              </ul>
-            </div>
-
-            <div className="mt-4 grid gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm">
-              <div>
-                <p className="font-bold text-red-800">Usuário</p>
-                <p className="text-red-700">{user.nome}</p>
-              </div>
-
-              <div>
-                <p className="font-bold text-red-800">E-mail</p>
-                <p className="break-all text-red-700">{user.email}</p>
-              </div>
-
-              <div>
-                <p className="font-bold text-red-800">Expira em</p>
-                <p className="text-red-700">{formatDate(user.expires_at)}</p>
-              </div>
-            </div>
-
-            <button
-              onClick={handleContinue}
-              className="mt-5 w-full rounded-xl bg-red-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-red-800"
-            >
-              Entendi e quero acessar o Busca de PI
-            </button>
-          </>
-        )}
-
-        {!canContinue && (
-          <div className="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-center text-sm text-neutral-600">
-            Aguarde a validação do link ou solicite um novo acesso.
+        <div className="p-6">
+          <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-center">
+            <p className="text-sm font-bold text-neutral-900">{message}</p>
           </div>
-        )}
+
+          {canContinue ? (
+            <>
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-red-700">
+                    Usuário
+                  </p>
+                  <p className="mt-1 truncate text-sm font-bold text-neutral-950">
+                    {user.nome}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-red-700">
+                    E-mail
+                  </p>
+                  <p className="mt-1 truncate text-sm font-bold text-neutral-950">
+                    {user.email}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-red-700">
+                    Expiração
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-neutral-950">
+                    {formatDate(user.expires_at)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-5">
+                <h2 className="text-lg font-black text-red-800">
+                  Aviso de segurança
+                </h2>
+
+                <div className="mt-4 space-y-3 text-sm font-medium leading-6 text-neutral-800">
+                  <p>
+                    Este acesso é pessoal, temporário e vinculado ao usuário
+                    informado na solicitação.
+                  </p>
+
+                  <p>
+                    O uso deste link é rastreado. Conseguiremos identificar
+                    indícios de compartilhamento, uso indevido ou acesso fora do
+                    padrão esperado.
+                  </p>
+
+                  <p>
+                    Não compartilhe este link com terceiros. As informações
+                    consultadas são internas, sensíveis e devem ser utilizadas
+                    apenas para fins autorizados.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-neutral-200 bg-white p-5">
+                <h3 className="text-sm font-black uppercase tracking-[0.12em] text-neutral-500">
+                  Termos rápidos
+                </h3>
+
+                <ul className="mt-3 space-y-2 text-sm text-neutral-700">
+                  <li>• O acesso ficará disponível por até 72 horas.</li>
+                  <li>• O link não deve ser encaminhado ou reutilizado por terceiros.</li>
+                  <li>• Consultas e acessos poderão ser auditados posteriormente.</li>
+                  <li>• O uso indevido poderá resultar no bloqueio do acesso.</li>
+                </ul>
+              </div>
+
+              <button
+                onClick={handleContinue}
+                className="mt-6 w-full rounded-2xl bg-red-700 px-5 py-4 text-sm font-black uppercase tracking-[0.08em] text-white shadow-lg shadow-red-900/20 transition hover:-translate-y-0.5 hover:bg-red-800"
+              >
+                Entendi e quero acessar
+              </button>
+            </>
+          ) : (
+            <div className="mt-5 rounded-2xl border border-neutral-200 bg-neutral-50 p-5 text-center text-sm font-semibold text-neutral-600">
+              Aguarde a validação do link ou solicite um novo acesso.
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );
