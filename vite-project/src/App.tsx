@@ -83,6 +83,8 @@ function isLongText(text: string) {
 
 function TrackedWatermark() {
   const [now, setNow] = useState(new Date());
+  const [active, setActive] = useState(false);
+
   const token = getToken() || "sem-token";
 
   useEffect(() => {
@@ -90,15 +92,70 @@ function TrackedWatermark() {
       setNow(new Date());
     }, 1000);
 
-    return () => window.clearInterval(interval);
+    const handlePrintBefore = () => {
+      setActive(true);
+    };
+
+    const handlePrintAfter = () => {
+      setActive(false);
+    };
+
+    window.addEventListener("beforeprint", handlePrintBefore);
+    window.addEventListener("afterprint", handlePrintAfter);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+
+      const isPrint =
+        (event.ctrlKey || event.metaKey) && key === "p";
+
+      const isScreenshot =
+        key === "printscreen" ||
+        ((event.ctrlKey || event.metaKey) &&
+          event.shiftKey &&
+          (key === "s" || key === "4"));
+
+      if (isPrint || isScreenshot) {
+        setActive(true);
+
+        setTimeout(() => {
+          setActive(false);
+        }, 5000);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      clearInterval(interval);
+
+      window.removeEventListener(
+        "beforeprint",
+        handlePrintBefore
+      );
+
+      window.removeEventListener(
+        "afterprint",
+        handlePrintAfter
+      );
+
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+    };
   }, []);
 
-  const watermarkText = `ACESSO RASTREADO • ${formatDateTime(now)} • ${token}`;
+  if (!active) return null;
+
+  const watermarkText = `ACESSO RASTREADO • ${formatDateTime(
+    now
+  )} • ${token}`;
 
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-[9999] hidden overflow-hidden opacity-[0.12] print:block"
+      className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden opacity-[0.12]"
     >
       <div className="absolute -left-24 -top-24 flex h-[140vh] w-[140vw] -rotate-12 flex-wrap content-start gap-x-16 gap-y-14">
         {Array.from({ length: 90 }).map((_, index) => (
