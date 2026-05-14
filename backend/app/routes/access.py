@@ -22,10 +22,6 @@ def get_admin_email():
     return os.getenv("ADMIN_EMAIL")
 
 
-def get_backend_url():
-    return os.getenv("BACKEND_URL", "http://localhost:8000")
-
-
 def get_frontend_url():
     return os.getenv("FRONTEND_URL", "http://localhost:5173")
 
@@ -42,52 +38,50 @@ class MagicLoginIn(BaseModel):
 
 @router.post("/request")
 def request_access(payload: AccessRequestIn, db: Session = Depends(get_db)):
-    approval_token = generate_token()
-
     access = AccessRequest(
         nome=payload.nome.strip(),
         email=payload.email.lower().strip(),
         setor=(payload.setor or "").strip(),
-        status="PENDENTE",
-        approval_token=approval_token,
+        status="APROVADO",
+        approval_token=generate_token(),
+        session_token=generate_token(),
+        approved_at=datetime.utcnow(),
+        access_expires_at=datetime.utcnow() + timedelta(hours=72),
     )
 
     db.add(access)
     db.commit()
     db.refresh(access)
 
+    frontend_url = get_frontend_url()
+    login_url = f"{frontend_url}/login-token?token={access.session_token}"
+
     admin_email = get_admin_email()
-    backend_url = get_backend_url()
-
-    print("ADMIN_EMAIL carregado:", admin_email)
-
-    approve_url = f"{backend_url}/api/access/approve/{approval_token}"
-    reject_url = f"{backend_url}/api/access/reject/{approval_token}"
 
     if admin_email:
         send_email(
             to=admin_email,
-            subject="Nova solicitação de acesso ao Busca de PI",
+            subject="Novo acesso gerado - Busca de PI",
             body=f"""
-Nova solicitação de acesso ao Busca de PI.
+Novo acesso gerado automaticamente.
 
 Nome: {access.nome}
 E-mail: {access.email}
 Setor: {access.setor or "-"}
 
-Aprovar por 72 horas:
-{approve_url}
+LINK MÁGICO:
+{login_url}
 
-Rejeitar:
-{reject_url}
+Expira em:
+{access.access_expires_at.strftime("%d/%m/%Y %H:%M")}
 """.strip(),
         )
-    else:
-        print("ADMIN_EMAIL não encontrado no .env")
 
     return {
-        "message": "Solicitação enviada. Aguarde aprovação por e-mail.",
+        "message": "Solicitação recebida. Link de acesso gerado.",
         "status": access.status,
+        "login_url": login_url,
+        "expires_at": access.access_expires_at,
     }
 
 
@@ -100,10 +94,7 @@ def approve_access(token: str, db: Session = Depends(get_db)):
     )
 
     if not access:
-        raise HTTPException(
-            status_code=404,
-            detail="Solicitação não encontrada.",
-        )
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada.")
 
     access.status = "APROVADO"
     access.approved_at = datetime.utcnow()
@@ -114,34 +105,13 @@ def approve_access(token: str, db: Session = Depends(get_db)):
     db.refresh(access)
 
     frontend_url = get_frontend_url()
-
-    login_url = (
-        f"{frontend_url}/login-token?token={access.session_token}"
-    )
-
-    send_email(
-        to=access.email,
-        subject="Acesso liberado ao Busca de PI",
-        body=f"""
-Olá, {access.nome}.
-
-Seu acesso ao Busca de PI foi aprovado por 72 horas.
-
-Acesse pelo link abaixo:
-{login_url}
-
-O acesso expira em:
-{access.access_expires_at.strftime("%d/%m/%Y %H:%M")}
-""".strip(),
-    )
+    login_url = f"{frontend_url}/login-token?token={access.session_token}"
 
     return {
-        "message": (
-            "Acesso aprovado por 72 horas. "
-            "O link foi enviado ao usuário."
-        ),
+        "message": "Acesso aprovado por 72 horas.",
         "email": access.email,
         "expires_at": access.access_expires_at,
+        "login_url": login_url,
     }
 
 
@@ -154,26 +124,18 @@ def reject_access(token: str, db: Session = Depends(get_db)):
     )
 
     if not access:
-        raise HTTPException(
-            status_code=404,
-            detail="Solicitação não encontrada.",
-        )
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada.")
 
     access.status = "REJEITADO"
     access.rejected_at = datetime.utcnow()
 
     db.commit()
 
-    return {
-        "message": "Solicitação rejeitada.",
-    }
+    return {"message": "Solicitação rejeitada."}
 
 
 @router.post("/magic-login")
-def magic_login(
-    payload: MagicLoginIn,
-    db: Session = Depends(get_db),
-):
+def magic_login(payload: MagicLoginIn, db: Session = Depends(get_db)):
     access = (
         db.query(AccessRequest)
         .filter(AccessRequest.session_token == payload.token)
@@ -181,33 +143,17 @@ def magic_login(
     )
 
     if not access:
-        raise HTTPException(
-            status_code=401,
-            detail="Link inválido.",
-        )
+        raise HTTPException(status_code=401, detail="Link inválido.")
 
     if access.status != "APROVADO":
-        raise HTTPException(
-            status_code=403,
-            detail="Acesso não aprovado.",
-        )
+        raise HTTPException(status_code=403, detail="Acesso não aprovado.")
 
-    if (
-        not access.access_expires_at
-        or access.access_expires_at < datetime.utcnow()
-    ):
+    if not access.access_expires_at or access.access_expires_at < datetime.utcnow():
         access.status = "EXPIRADO"
         db.commit()
+        raise HTTPException(status_code=403, detail="Acesso expirado.")
 
-        raise HTTPException(
-            status_code=403,
-            detail="Acesso expirado.",
-        )
-
-    jwt_token = create_access_jwt(
-        access.id,
-        access.email,
-    )
+    jwt_token = create_access_jwt(access.id, access.email)
 
     return {
         "token": jwt_token,
