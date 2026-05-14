@@ -98,7 +98,7 @@ function TrackedWatermark() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden opacity-[0.075]"
+      className="pointer-events-none fixed inset-0 z-[9999] hidden overflow-hidden opacity-[0.12] print:block"
     >
       <div className="absolute -left-24 -top-24 flex h-[140vh] w-[140vw] -rotate-12 flex-wrap content-start gap-x-16 gap-y-14">
         {Array.from({ length: 90 }).map((_, index) => (
