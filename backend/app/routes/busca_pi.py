@@ -66,5 +66,5 @@ def buscar_pi(
 
     return {
         "total": len(result),
-        "items": result[:500],
-    }
+        "items": result,
+}
