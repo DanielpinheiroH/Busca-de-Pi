@@ -83,8 +83,6 @@ function isLongText(text: string) {
 
 function TrackedWatermark() {
   const [now, setNow] = useState(new Date());
-  const [active, setActive] = useState(false);
-
   const token = getToken() || "sem-token";
 
   useEffect(() => {
@@ -92,82 +90,31 @@ function TrackedWatermark() {
       setNow(new Date());
     }, 1000);
 
-    const handlePrintBefore = () => {
-      setActive(true);
-    };
-
-    const handlePrintAfter = () => {
-      setActive(false);
-    };
-
-    window.addEventListener("beforeprint", handlePrintBefore);
-    window.addEventListener("afterprint", handlePrintAfter);
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const key = event.key.toLowerCase();
-
-      const isPrint =
-        (event.ctrlKey || event.metaKey) && key === "p";
-
-      const isScreenshot =
-        key === "printscreen" ||
-        ((event.ctrlKey || event.metaKey) &&
-          event.shiftKey &&
-          (key === "s" || key === "4"));
-
-      if (isPrint || isScreenshot) {
-        setActive(true);
-
-        setTimeout(() => {
-          setActive(false);
-        }, 5000);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      clearInterval(interval);
-
-      window.removeEventListener(
-        "beforeprint",
-        handlePrintBefore
-      );
-
-      window.removeEventListener(
-        "afterprint",
-        handlePrintAfter
-      );
-
-      window.removeEventListener(
-        "keydown",
-        handleKeyDown
-      );
-    };
+    return () => window.clearInterval(interval);
   }, []);
 
-  if (!active) return null;
-
-  const watermarkText = `ACESSO RASTREADO • ${formatDateTime(
-    now
-  )} • ${token}`;
+  const watermarkText = `ACESSO RASTREADO • ${formatDateTime(now)} • ${token}`;
 
   return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden opacity-[0.12]"
-    >
-      <div className="absolute -left-24 -top-24 flex h-[140vh] w-[140vw] -rotate-12 flex-wrap content-start gap-x-16 gap-y-14">
-        {Array.from({ length: 90 }).map((_, index) => (
-          <span
-            key={index}
-            className="select-none whitespace-nowrap text-[11px] font-black uppercase tracking-[0.28em] text-neutral-900 sm:text-xs"
-          >
-            {watermarkText}
-          </span>
-        ))}
+    <>
+      <div className="pointer-events-none fixed left-4 top-16 z-[9999] max-w-[85vw] rounded-full bg-black/[0.04] px-3 py-1">
+        <span className="select-none whitespace-nowrap text-[9px] font-black uppercase tracking-[0.18em] text-black/20">
+          {watermarkText}
+        </span>
       </div>
-    </div>
+
+      <div className="pointer-events-none fixed inset-0 z-[9998] flex items-center justify-center">
+        <span className="-rotate-12 select-none text-4xl font-black uppercase tracking-[0.25em] text-black/[0.035] sm:text-6xl">
+          ACESSO RASTREADO
+        </span>
+      </div>
+
+      <div className="pointer-events-none fixed bottom-4 right-4 z-[9999] max-w-[85vw] rounded-full bg-black/[0.04] px-3 py-1">
+        <span className="select-none whitespace-nowrap text-[9px] font-black uppercase tracking-[0.18em] text-black/20">
+          {token}
+        </span>
+      </div>
+    </>
   );
 }
 
