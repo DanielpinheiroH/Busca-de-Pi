@@ -16,13 +16,7 @@ export function clearToken() {
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
-  const token = getToken();
-
-  const response = await fetch(`${API_URL}${path}`, {
-    headers: {
-      Authorization: token ? `Bearer ${token}` : "",
-    },
-  });
+  const response = await fetch(`${API_URL}${path}`);
 
   if (!response.ok) {
     throw new Error(await response.text());

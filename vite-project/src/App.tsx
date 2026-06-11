@@ -3,9 +3,7 @@ import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
-import { RequestAccess } from "./pages/RequestAccess";
-import { LoginToken } from "./pages/LoginToken";
-import { apiGet, clearToken, getToken } from "./services/api";
+import { apiGet } from "./services/api";
 
 type PI = {
   pi: string;
@@ -48,13 +46,6 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("pt-BR").format(date);
 }
 
-function formatDateTime(value: Date) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "medium",
-  }).format(value);
-}
-
 function formatMoney(value: number) {
   if (typeof value !== "number") return "-";
   return new Intl.NumberFormat("pt-BR", {
@@ -79,43 +70,6 @@ function normalize(value: string) {
 
 function isLongText(text: string) {
   return (text || "").trim().length > 140;
-}
-
-function TrackedWatermark() {
-  const [now, setNow] = useState(new Date());
-  const token = getToken() || "sem-token";
-
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setNow(new Date());
-    }, 1000);
-
-    return () => window.clearInterval(interval);
-  }, []);
-
-  const watermarkText = `ACESSO RASTREADO • ${formatDateTime(now)} • ${token}`;
-
-  return (
-    <>
-      <div className="pointer-events-none fixed left-4 top-16 z-[9999] max-w-[85vw] rounded-full bg-black/[0.04] px-3 py-1">
-        <span className="select-none whitespace-nowrap text-[9px] font-black uppercase tracking-[0.18em] text-black/20">
-          {watermarkText}
-        </span>
-      </div>
-
-      <div className="pointer-events-none fixed inset-0 z-[9998] flex items-center justify-center">
-        <span className="-rotate-12 select-none text-4xl font-black uppercase tracking-[0.25em] text-black/[0.035] sm:text-6xl">
-          ACESSO RASTREADO
-        </span>
-      </div>
-
-      <div className="pointer-events-none fixed bottom-4 right-4 z-[9999] max-w-[85vw] rounded-full bg-black/[0.04] px-3 py-1">
-        <span className="select-none whitespace-nowrap text-[9px] font-black uppercase tracking-[0.18em] text-black/20">
-          {token}
-        </span>
-      </div>
-    </>
-  );
 }
 
 function MatrixBadge({ value }: { value: string }) {
@@ -194,16 +148,6 @@ function StatPill({ label, value }: StatPillProps) {
 }
 
 export default function App() {
-  const path = window.location.pathname;
-
-  if (path === "/solicitar-acesso") {
-    return <RequestAccess />;
-  }
-
-  if (path === "/login-token") {
-    return <LoginToken />;
-  }
-
   const [data, setData] = useState<PI[]>([]);
   const [searchPI, setSearchPI] = useState("");
   const [searchCNPJ, setSearchCNPJ] = useState("");
@@ -216,18 +160,11 @@ export default function App() {
 
   useEffect(() => {
     async function loadInitialData() {
-      const token = getToken();
-
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
         const response = await apiGet<BuscaPiResponse>("/api/busca-pi");
         setData(response.items);
-      } catch {
-        clearToken();
+      } catch (error) {
+        console.error("Erro ao carregar os dados:", error);
       } finally {
         setIsLoading(false);
       }
@@ -273,11 +210,6 @@ export default function App() {
     setSearchCNPJ("");
     setSearchDate("");
     setCurrentPage(1);
-  };
-
-  const handleLogout = () => {
-    clearToken();
-    window.location.href = "/solicitar-acesso";
   };
 
   const exportToExcel = async () => {
@@ -341,14 +273,8 @@ export default function App() {
     saveAs(blob, "resultado_filtrado.xlsx");
   };
 
-  if (!isLoading && !getToken()) {
-    return <RequestAccess />;
-  }
-
   return (
     <div className="flex min-h-screen flex-col bg-[linear-gradient(180deg,#fff5f5_0%,#ffffff_18%,#f5f5f5_100%)]">
-      <TrackedWatermark />
-
       <Header />
 
       <main className="flex-1">
@@ -366,15 +292,8 @@ export default function App() {
 
             <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex rounded-full bg-red-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-red-700">
-                Consulta protegida
+                Acesso livre temporário
               </div>
-
-              <button
-                onClick={handleLogout}
-                className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-600 transition hover:border-red-300 hover:text-red-700"
-              >
-                Sair
-              </button>
             </div>
           </div>
 
