@@ -153,6 +153,7 @@ export default function App() {
   const [searchCNPJ, setSearchCNPJ] = useState("");
   const [searchDate, setSearchDate] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>(
     {}
   );
@@ -165,6 +166,9 @@ export default function App() {
         setData(response.items);
       } catch (error) {
         console.error("Erro ao carregar os dados:", error);
+        setLoadError(
+          "Não foi possível conectar ao backend. Verifique se a API está rodando."
+        );
       } finally {
         setIsLoading(false);
       }
@@ -371,6 +375,13 @@ export default function App() {
           {isLoading ? (
             <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center text-neutral-500 shadow-sm">
               Carregando dados...
+            </div>
+          ) : loadError ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center shadow-sm">
+              <h2 className="text-base font-bold text-red-800">
+                Erro ao carregar os PIs
+              </h2>
+              <p className="mt-2 text-sm text-red-700">{loadError}</p>
             </div>
           ) : filtered.length === 0 ? (
             <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center shadow-sm">
