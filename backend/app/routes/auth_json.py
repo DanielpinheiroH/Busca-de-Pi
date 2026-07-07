@@ -49,6 +49,10 @@ def public_user(user):
     }
 
 
+def normalize_login(value):
+    return str(value or "").strip().lower()
+
+
 def sign(payload: str):
     return hmac.new(
         SECRET_KEY.encode("utf-8"),
@@ -84,7 +88,11 @@ def read_session_value(value):
 
 
 def get_current_json_user(request: Request):
-    session = read_session_value(request.cookies.get(SESSION_COOKIE))
+    session_value = (
+        request.headers.get("x-session")
+        or request.cookies.get(SESSION_COOKIE)
+    )
+    session = read_session_value(session_value)
 
     if not session:
         raise HTTPException(status_code=401, detail="Login necessario.")
@@ -93,7 +101,7 @@ def get_current_json_user(request: Request):
     user = next(
         (
             item for item in users
-            if item.get("login") == session.get("login")
+            if normalize_login(item.get("login")) == normalize_login(session.get("login"))
             and item.get("ativo", True)
         ),
         None,
@@ -108,13 +116,13 @@ def get_current_json_user(request: Request):
 @router.post("/login")
 def login(payload: LoginIn, response: Response):
     users = load_users()
-    login_value = payload.login.strip()
+    login_value = normalize_login(payload.login)
 
     user = next(
         (
             item for item in users
-            if item.get("login") == login_value
-            and item.get("senha") == payload.senha
+            if normalize_login(item.get("login")) == login_value
+            and str(item.get("senha", "")) == payload.senha
             and item.get("ativo", True)
         ),
         None,
@@ -123,9 +131,11 @@ def login(payload: LoginIn, response: Response):
     if not user:
         raise HTTPException(status_code=401, detail="Login ou senha invalidos.")
 
+    session_value = create_session_value(user)
+
     response.set_cookie(
         key=SESSION_COOKIE,
-        value=create_session_value(user),
+        value=session_value,
         max_age=SESSION_MAX_AGE,
         httponly=True,
         samesite="lax",
@@ -133,6 +143,7 @@ def login(payload: LoginIn, response: Response):
 
     return {
         "user": public_user(user),
+        "session": session_value,
     }
 
 

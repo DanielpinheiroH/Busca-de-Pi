@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { LoginToken } from "./pages/LoginToken";
-import { apiGet, apiPost } from "./services/api";
+import { apiGet, apiPost, clearSession } from "./services/api";
 
 type PI = {
   pi: string;
@@ -238,7 +236,9 @@ export default function App() {
     } catch (error) {
       console.error("Erro ao carregar os dados:", error);
       setLoadError(
-        "Nao foi possivel conectar ao backend. Verifique se a API esta rodando."
+        error instanceof Error
+          ? `Nao foi possivel carregar os PIs: ${error.message}`
+          : "Nao foi possivel conectar ao backend. Verifique se a API esta rodando."
       );
     } finally {
       setIsLoading(false);
@@ -247,70 +247,10 @@ export default function App() {
 
   const handleLogout = async () => {
     await apiPost("/api/auth/logout", {});
+    clearSession();
     setUser(null);
     setData([]);
     clearFilters();
-  };
-
-  const exportToExcel = async () => {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Resultados");
-
-    worksheet.columns = [
-      { header: "PI", key: "pi", width: 14 },
-      { header: "Anunciante", key: "anunciante", width: 28 },
-      { header: "CNPJ Anunciante", key: "cnpjAnunciante", width: 22 },
-      { header: "Tipo do PI", key: "tipoPi", width: 18 },
-      { header: "PI Matriz", key: "piMatriz", width: 15 },
-      { header: "Campanha", key: "campanha", width: 20 },
-      { header: "Executivo", key: "executivo", width: 20 },
-      { header: "Diretoria", key: "diretoria", width: 20 },
-      { header: "Canal", key: "canal", width: 20 },
-      { header: "Produto", key: "produto", width: 30 },
-      { header: "Agência", key: "agencia", width: 18 },
-      { header: "Razão Social Agência", key: "razaoSocialAgencia", width: 28 },
-      { header: "CNPJ Agência", key: "cnpjAgencia", width: 22 },
-      { header: "UF Cliente", key: "ufCliente", width: 12 },
-      { header: "UF Agência", key: "ufAgencia", width: 12 },
-      { header: "Perfil", key: "perfil", width: 16 },
-      { header: "Mês da Venda", key: "mesVenda", width: 14 },
-      { header: "Data da Venda", key: "dataVenda", width: 16 },
-      { header: "Início Veiculação", key: "inicioVeiculacao", width: 18 },
-      { header: "Fim Veiculação", key: "fimVeiculacao", width: 18 },
-      { header: "Vencimento", key: "vencimento", width: 16 },
-      { header: "Valor Bruto", key: "valorBruto", width: 16 },
-      { header: "Valor Líquido", key: "valorLiquido", width: 16 },
-      { header: "Observações", key: "observacoes", width: 42 },
-    ];
-
-    filtered.forEach((item) => {
-      worksheet.addRow({
-        ...item,
-        cnpjAnunciante: formatCNPJ(item.cnpjAnunciante),
-        cnpjAgencia: formatCNPJ(item.cnpjAgencia),
-        dataVenda: formatDate(item.dataVenda),
-        inicioVeiculacao: formatDate(item.inicioVeiculacao),
-        fimVeiculacao: formatDate(item.fimVeiculacao),
-        vencimento: formatDate(item.vencimento),
-      });
-    });
-
-    worksheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
-    worksheet.getRow(1).fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "B91C1C" },
-    };
-
-    worksheet.getColumn("valorBruto").numFmt = '"R$"#,##0.00';
-    worksheet.getColumn("valorLiquido").numFmt = '"R$"#,##0.00';
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-
-    saveAs(blob, "resultado_filtrado.xlsx");
   };
 
   if (!authChecked) {
@@ -377,13 +317,6 @@ export default function App() {
                   className="rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:border-neutral-400 hover:bg-neutral-50"
                 >
                   Limpar filtros
-                </button>
-
-                <button
-                  onClick={exportToExcel}
-                  className="rounded-xl bg-red-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-800"
-                >
-                  Exportar XLSX
                 </button>
               </div>
             </div>
@@ -481,6 +414,10 @@ export default function App() {
 
                               <span className="max-w-full truncate rounded-full border border-white/30 bg-white/10 px-2 py-0.5 text-[10px] font-semibold">
                                 {item.produto || "Produto não informado"}
+                              </span>
+
+                              <span className="max-w-full truncate rounded-full border border-white/30 bg-white/10 px-2 py-0.5 text-[10px] font-semibold">
+                                Usuario: {user.nome}
                               </span>
                             </div>
                           </div>

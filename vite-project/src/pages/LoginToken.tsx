@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { apiPost } from "../services/api";
+import { apiPost, setSession } from "../services/api";
 
 type LoginResponse = {
+  session: string;
   user: {
     nome: string;
     login: string;
@@ -25,10 +26,11 @@ export function LoginToken({ onLogin }: LoginTokenProps) {
 
     try {
       const response = await apiPost<LoginResponse>("/api/auth/login", {
-        login,
+        login: login.trim().toLowerCase(),
         senha,
       });
 
+      setSession(response.session);
       onLogin(response.user);
     } catch {
       setMessage("Login ou senha invalidos.");
