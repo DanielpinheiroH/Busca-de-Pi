@@ -3,7 +3,8 @@ import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
-import { apiGet } from "./services/api";
+import { LoginToken } from "./pages/LoginToken";
+import { apiGet, apiPost } from "./services/api";
 
 type PI = {
   pi: string;
@@ -35,6 +36,11 @@ type PI = {
 type BuscaPiResponse = {
   total: number;
   items: PI[];
+};
+
+type AuthUser = {
+  nome: string;
+  login: string;
 };
 
 const ITEMS_PER_PAGE = 50;
@@ -149,6 +155,8 @@ function StatPill({ label, value }: StatPillProps) {
 
 export default function App() {
   const [data, setData] = useState<PI[]>([]);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [searchPI, setSearchPI] = useState("");
   const [searchCNPJ, setSearchCNPJ] = useState("");
   const [searchDate, setSearchDate] = useState("");
@@ -162,15 +170,19 @@ export default function App() {
   useEffect(() => {
     async function loadInitialData() {
       try {
+        const authResponse = await apiGet<{ user: AuthUser }>("/api/auth/me");
+        setUser(authResponse.user);
+
         const response = await apiGet<BuscaPiResponse>("/api/busca-pi");
         setData(response.items);
       } catch (error) {
         console.error("Erro ao carregar os dados:", error);
-        setLoadError(
-          "Não foi possível conectar ao backend. Verifique se a API está rodando."
-        );
+        setUser(null);
+        setLoadError("");
+        return;
       } finally {
         setIsLoading(false);
+        setAuthChecked(true);
       }
     }
 
@@ -214,6 +226,30 @@ export default function App() {
     setSearchCNPJ("");
     setSearchDate("");
     setCurrentPage(1);
+  };
+
+  const handleLogin = async (authUser: AuthUser) => {
+    setUser(authUser);
+    setIsLoading(true);
+
+    try {
+      const response = await apiGet<BuscaPiResponse>("/api/busca-pi");
+      setData(response.items);
+    } catch (error) {
+      console.error("Erro ao carregar os dados:", error);
+      setLoadError(
+        "Nao foi possivel conectar ao backend. Verifique se a API esta rodando."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await apiPost("/api/auth/logout", {});
+    setUser(null);
+    setData([]);
+    clearFilters();
   };
 
   const exportToExcel = async () => {
@@ -277,6 +313,18 @@ export default function App() {
     saveAs(blob, "resultado_filtrado.xlsx");
   };
 
+  if (!authChecked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-neutral-950 text-sm font-semibold text-white">
+        Validando acesso...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginToken onLogin={handleLogin} />;
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-[linear-gradient(180deg,#fff5f5_0%,#ffffff_18%,#f5f5f5_100%)]">
       <Header />
@@ -296,8 +344,15 @@ export default function App() {
 
             <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex rounded-full bg-red-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-red-700">
-                Acesso livre temporário
+                {user.nome}
               </div>
+
+              <button
+                onClick={handleLogout}
+                className="rounded-full border border-neutral-300 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-neutral-700 transition hover:bg-neutral-50"
+              >
+                Sair
+              </button>
             </div>
           </div>
 

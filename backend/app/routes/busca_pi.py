@@ -1,7 +1,9 @@
 import json
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+from app.routes.auth_json import get_current_json_user
 
 router = APIRouter(prefix="/api/busca-pi", tags=["Busca PI"])
 
@@ -29,6 +31,7 @@ def buscar_pi(
     pi: str = Query("", alias="pi"),
     cnpj: str = Query("", alias="cnpj"),
     fim_veiculacao: str = Query("", alias="fimVeiculacao"),
+    _user=Depends(get_current_json_user),
 ):
     data = load_data()
 

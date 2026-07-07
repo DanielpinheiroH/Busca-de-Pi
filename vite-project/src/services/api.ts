@@ -2,22 +2,10 @@ export const API_URL =
   import.meta.env.VITE_API_URL ||
   (import.meta.env.DEV ? "http://localhost:8010" : "");
 
-export const TOKEN_KEY = "busca_pi_token";
-
-export function getToken() {
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-export function setToken(token: string) {
-  localStorage.setItem(TOKEN_KEY, token);
-}
-
-export function clearToken() {
-  localStorage.removeItem(TOKEN_KEY);
-}
-
 export async function apiGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`);
+  const response = await fetch(`${API_URL}${path}`, {
+    credentials: "include",
+  });
 
   if (!response.ok) {
     throw new Error(await response.text());
@@ -27,13 +15,11 @@ export async function apiGet<T>(path: string): Promise<T> {
 }
 
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const token = getToken();
-
   const response = await fetch(`${API_URL}${path}`, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      Authorization: token ? `Bearer ${token}` : "",
     },
     body: JSON.stringify(body),
   });
