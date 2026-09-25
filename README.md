@@ -241,6 +241,7 @@ python .\scripts\gerar_json.py
 - A API sempre le `backend/data/dados.json`.
 - A API de busca exige login valido em `backend/data/usuarios.json`.
 - O script espera a planilha em `backend/data/base.xlsb`.
+- Registros cujo PI seja `9999` sao ignorados pelo gerador e pela API.
 - O frontend pagina os resultados e tambem permite exportar a busca filtrada
   para XLSX.
 - Em producao, `vite-project/vercel.json` redireciona chamadas `/api/*` para o

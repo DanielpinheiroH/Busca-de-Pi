@@ -229,7 +229,9 @@ try {
     for ($row = $headerRow + 1; $row -le $rowCount; $row++) {
         $pi = Normalize-Text (Get-CellValue $row @("PI"))
 
-        if (-not $pi) {
+        $normalizedPi = $pi -replace "\D", ""
+
+        if (-not $pi -or $normalizedPi -eq "9999") {
             continue
         }
 

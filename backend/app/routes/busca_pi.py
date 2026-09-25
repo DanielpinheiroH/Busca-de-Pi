@@ -23,7 +23,12 @@ def load_data():
         )
 
     with open(DATA_PATH, "r", encoding="utf-8") as file:
-        return json.load(file)
+        data = json.load(file)
+
+    return [
+        item for item in data
+        if normalize(str(item.get("pi", ""))) != "9999"
+    ]
 
 
 @router.get("")

@@ -9,6 +9,7 @@ ARQUIVO_PLANILHA = BASE_DIR / "backend" / "data" / "base.xlsb"
 ARQUIVO_SAIDA = BASE_DIR / "backend" / "data" / "dados.json"
 
 ABA_DADOS = "Vendas a partir 2022"
+PIS_IGNORADOS = {"9999"}
 
 
 def normalizar_texto(valor):
@@ -269,7 +270,12 @@ def main():
             ),
         }
 
-        if item["pi"]:
+        pi_normalizado = "".join(
+            caractere for caractere in item["pi"]
+            if caractere.isdigit()
+        )
+
+        if item["pi"] and pi_normalizado not in PIS_IGNORADOS:
             dados.append(item)
 
     ARQUIVO_SAIDA.parent.mkdir(
